@@ -233,7 +233,7 @@ Các bước ghi dữ liệu vào bảng Music(đã tạo ở mục 1.2):
 - Bước 5: Trong giao diện Items, chọn <b>Create item</b>
 
 
-![Write Data  Dashboard!](./images/Write-data-2.png "WriteData")
+![Write Data  Dashboard!](./images/WriteData-2.png "WriteData")
 
 
 - Bước 6: Chọn <b>Add new attribute</b>, sau đó chọn <b>Number</b>. Tên trường: <b>Awards.</b>
