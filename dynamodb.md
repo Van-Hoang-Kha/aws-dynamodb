@@ -419,8 +419,7 @@ aws dynamodb create-table \
     --provisioned-throughput \
         ReadCapacityUnits=10,WriteCapacityUnits=5 \
     --table-class STANDARD
-  
-    ```
+  ```
  
  
 
