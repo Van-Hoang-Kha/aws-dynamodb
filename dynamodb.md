@@ -197,9 +197,9 @@ Bước 3: Ở phía bên phải của bảng điều khiển, chọn <b>Create 
 
 Bước 4: Nhập chi tiết bảng như sau:
 
-- Đối với  <b>Table name</b>, hãy nhập <b>Music</b>.
+- Đối với  <b>Table name</b>, hãy nhập <b>```Music```</b>.
 
-- Đối với  <b>Partition key</b>, hãy nhập <b>Artist</b>.
+- Đối với  <b>Partition key</b>, hãy nhập <b>```Artist```</b>.
 
 - Nhập <b>SongTitle</b> làm <b>Sort key</b>.
 
