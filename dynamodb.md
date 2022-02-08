@@ -407,7 +407,8 @@ Bước 3: Nhập chi tiết thông tin từ file csv ở phần 2.1:
 
 
 Bước 4: Để tạo bảng, ta sử dụng lệnh ` create-table` . Gõ lệnh:
-```aws dynamodb create-table \
+```
+aws dynamodb create-table \
     --table-name Music \
     --attribute-definitions \
         AttributeName=Artist,AttributeType=S \
@@ -417,7 +418,9 @@ Bước 4: Để tạo bảng, ta sử dụng lệnh ` create-table` . Gõ lện
         AttributeName=SongTitle,KeyType=RANGE \
     --provisioned-throughput \
         ReadCapacityUnits=10,WriteCapacityUnits=5 \
-    --table-class STANDARD```
+    --table-class STANDARD
+  
+    ```
  
  
 
