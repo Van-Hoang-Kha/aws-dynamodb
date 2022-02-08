@@ -467,9 +467,13 @@ aws dynamodb create-table \
     }
 }
 ```
+
 Bước 5: Kiểm tra trạng thái bảng:
 
-- Gõ lệnh `aws dynamodb describe-table --table-name Music | grep TableStatus`
+- Gõ lệnh 
+```
+aws dynamodb describe-table --table-name Music | grep TableStatus
+```
 
 - Khi DynamoDB hoàn thành việc tạo bảng, giá trị của TableStatus là ACTIVE: `"TableStatus": "ACTIVE",`
 
@@ -507,59 +511,64 @@ aws dynamodb put-item \
 - Mặc định của AWS DynamoDB là <b>eventually consistent reads</b>.
 
 - Gõ lệnh:
-
-`aws dynamodb get-item --consistent-read \
+```
+aws dynamodb get-item --consistent-read \
     --table-name Music \
-    --key '{ "Artist": {"S": "Acme Band"}, "SongTitle": {"S": "Happy Day"}}'`
+    --key '{ "Artist": {"S": "Acme Band"}, "SongTitle": {"S": "Happy Day"}}'
+```
 
 <h3>2.4 Cập nhật dữ liệu </h3>
 
 - Để cập nhật dữ liệu, sử dụng lệnh `update-item`
 
 - Gõ lệnh:
-
-`aws dynamodb update-item \
+```
+aws dynamodb update-item \
     --table-name Music \
     --key '{ "Artist": {"S": "Acme Band"}, "SongTitle": {"S": "Happy Day"}}' \
     --update-expression "SET AlbumTitle = :newval" \
     --expression-attribute-values '{":newval":{"S":"Updated Album Title"}}' \
-    --return-values ALL_NEW`
+    --return-values ALL_NEW
+ ```
 
 <h3>2.5 Truy vấn dữ liệu </h3>
 
 - Để truy vấn dữ liệu từ bảng, sử dụng lệnh `query` và cung cấp partition key.
 
 - Gõ lệnh:
-
-`aws dynamodb query \
+```
+aws dynamodb query \
     --table-name Music \
     --key-condition-expression "Artist = :name" \
-    --expression-attribute-values  '{":name":{"S":"Acme Band"}}'`
+    --expression-attribute-values  '{":name":{"S":"Acme Band"}}'
+ ```
 
 <h3>2.6 Tạo Global Secondary Index</h3>
 
 - Để tạo Global Secondary Index, sử dụng lệnh `update-table`
 
 - Gõ lệnh: 
-
-`aws dynamodb update-table \
+```
+aws dynamodb update-table \
     --table-name Music \
     --attribute-definitions AttributeName=AlbumTitle,AttributeType=S \
     --global-secondary-index-updates \
         "[{\"Create\":{\"IndexName\": \"AlbumTitle-index\",\"KeySchema\":[{\"AttributeName\":\"AlbumTitle\",\"KeyType\":\"HASH\"}], \
-        \"ProvisionedThroughput\": {\"ReadCapacityUnits\": 10, \"WriteCapacityUnits\": 5      },\"Projection\":{\"ProjectionType\":\"ALL\"}}}]"`
+        \"ProvisionedThroughput\": {\"ReadCapacityUnits\": 10, \"WriteCapacityUnits\": 5      },\"Projection\":{\"ProjectionType\":\"ALL\"}}}]"
+```
 
 <h3>2.7 Truy vấn Global Secondary Index</h3>
 
 - Để truy vấn Global Secondary Index, sử dụng lệnh `query`
 
 - Gõ lệnh:
-
-`aws dynamodb query \
+```
+aws dynamodb query \
     --table-name Music \
     --index-name AlbumTitle-index \
     --key-condition-expression "AlbumTitle = :name" \
-    --expression-attribute-values  '{":name":{"S":"Somewhat Famous"}}'`
+    --expression-attribute-values  '{":name":{"S":"Somewhat Famous"}}'
+ ```
 
 <h1>III.DỌN DẸP TÀI NGUYÊN</h1>
 
@@ -583,8 +592,9 @@ aws dynamodb put-item \
 - Để xóa bảng, sử dụng lệnh `delete-table`
 
 - Gõ lệnh:
-
-`aws dynamodb delete-table --table-name Music`
+```
+aws dynamodb delete-table --table-name Music
+```
 
 
 
