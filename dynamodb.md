@@ -406,7 +406,7 @@ Bước 3: Nhập chi tiết thông tin từ file csv ở phần 2.1:
 ![Create Table Dashboard!](./images/CreateTable-4.png "CreateTableDashboard")
 
 
-Bước 4: Để tạo bảng, ta sử dụng lệnh ` create-table` . Gõ lệnh:
+Bước 4: Để tạo bảng, ta sử dụng lệnh `create-table` . Gõ lệnh:
 ```
 aws dynamodb create-table \
     --table-name Music \
@@ -426,8 +426,8 @@ aws dynamodb create-table \
 ![Create Table Dashboard!](./images/CreateTable-5.png "CreateTableDashboard")
 
 <b>Kết quả:</b>
-
-`{
+```
+{
     "TableDescription": {
         "AttributeDefinitions": [
             {
@@ -465,8 +465,8 @@ aws dynamodb create-table \
             "TableClass": "STANDARD"
         }
     }
-}`
-
+}
+```
 Bước 5: Kiểm tra trạng thái bảng:
 
 - Gõ lệnh `aws dynamodb describe-table --table-name Music | grep TableStatus`
@@ -479,26 +479,27 @@ Bước 5: Kiểm tra trạng thái bảng:
 
 - Sau khi tạo bảng ở bước 2.1, tiếp tục gõ lệnh:
 
-`aws dynamodb put-item \
+```
+aws dynamodb put-item \
     --table-name Music  \
     --item \
-        '{"Artist": {"S": "No One You Know"}, "SongTitle": {"S": "Call Me Today"}, "AlbumTitle": {"S": "Somewhat Famous"}, "Awards": {"N": "1"}}'`
+        '{"Artist": {"S": "No One You Know"}, "SongTitle": {"S": "Call Me Today"}, "AlbumTitle": {"S": "Somewhat Famous"}, "Awards": {"N": "1"}}'
 
-`aws dynamodb put-item \
+aws dynamodb put-item \
     --table-name Music  \
     --item \
-        '{"Artist": {"S": "No One You Know"}, "SongTitle": {"S": "Howdy"}, "AlbumTitle": {"S": "Somewhat Famous"}, "Awards": {"N": "2"}}'`
+        '{"Artist": {"S": "No One You Know"}, "SongTitle": {"S": "Howdy"}, "AlbumTitle": {"S": "Somewhat Famous"}, "Awards": {"N": "2"}}'
 
-`aws dynamodb put-item \
+aws dynamodb put-item \
     --table-name Music \
     --item \
-        '{"Artist": {"S": "Acme Band"}, "SongTitle": {"S": "Happy Day"}, "AlbumTitle": {"S": "Songs About Life"}, "Awards": {"N": "10"} }'`
+        '{"Artist": {"S": "Acme Band"}, "SongTitle": {"S": "Happy Day"}, "AlbumTitle": {"S": "Songs About Life"}, "Awards": {"N": "10"} }'
                             
-`aws dynamodb put-item \
+aws dynamodb put-item \
     --table-name Music \
     --item \
-        '{"Artist": {"S": "Acme Band"}, "SongTitle": {"S": "PartiQL Rocks"}, "AlbumTitle": {"S": "Another Album Title"}, "Awards": {"N": "8"} }'`
-
+        '{"Artist": {"S": "Acme Band"}, "SongTitle": {"S": "PartiQL Rocks"}, "AlbumTitle": {"S": "Another Album Title"}, "Awards": {"N": "8"} }'
+```
 <h3>2.3 Đọc dữ liệu </h3>
 
 - Để đọc dữ liệu, sử dụng lệnh `get-item` và tham số `consistent-read` thể hiện <b>strongly consistent reads</b>.
