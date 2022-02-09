@@ -621,7 +621,7 @@ s3 = boto3.resource("s3")
 
 <h3>1.2.b Client</h3>
 
-<b>Client</b>cung cấp giao diện cấp thấp cho dịch vụ AWS. Định nghĩa của chúng được tạo bởi mô tả dịch vụ JSON có trong thư viện botocore . Gói botocore được chia sẻ giữa boto3 cũng như AWS CLI .
+<b>Client</b> cung cấp giao diện cấp thấp cho dịch vụ AWS. Định nghĩa của chúng được tạo bởi mô tả dịch vụ JSON có trong thư viện botocore . Gói botocore được chia sẻ giữa boto3 cũng như AWS CLI .
 
 Định nghĩa dịch vụ cho AWS S3 được lưu trữ dưới dạng JSON trong gói botocore .
 
