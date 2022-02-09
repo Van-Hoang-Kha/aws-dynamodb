@@ -470,7 +470,7 @@ aws dynamodb create-table \
 
 Bước 5: Kiểm tra trạng thái bảng:
 
-- Gõ lệnh 
+- Gõ lệnh: 
 ```
 aws dynamodb describe-table --table-name Music | grep TableStatus
 ```
@@ -569,8 +569,675 @@ aws dynamodb query \
     --key-condition-expression "AlbumTitle = :name" \
     --expression-attribute-values  '{":name":{"S":"Somewhat Famous"}}'
  ```
+<h1>III. BẮT ĐẦU VỚI AWS SDK</h1>
 
-<h1>III.DỌN DẸP TÀI NGUYÊN</h1>
+<h2>1. CHUẨN BỊ</h2> 
+
+Sử dụng AWS SDK cho Python (Boto3) để viết các chương trình đơn giản nhằm thực hiện các hoạt động Amazon DynamoDB sau:
+
+- Tạo một bảng được gọi Moviesvà tải dữ liệu mẫu ở định dạng JSON.
+
+- Thực hiện các thao tác tạo, đọc, cập nhật và xóa trên bảng.
+
+- Chạy các truy vấn đơn giản.
+
+<h3>1.1 Cấu hình AWS CLI</h3>
+
+- Bước 1: Mở <b>Window Command Prompt</b>, chọn chế độ <b>`Run as administrator`</b>
+
+- Bước 2: Gõ lệnh <b>`aws configure`</b>
+
+- Bước 3: Nhập chi tiết thông tin từ file csv ở phần 2.1:
+
+    - AWS Access Key ID 
+
+    - AWS Secret Access Key
+
+    - Default region name
+
+    - Default output format: bỏ trống
+
+- Bước 4: Cài đặt <b>Python 2.6</b> trở lên.
+
+- Bước 5: Kiểm tra version python để xác định đã cài đặt thành công bằng lệnh <b>`python --version`</b>
+
+- Bước 5: Cài đặt thư viện Boto3 bằng lệnh <b>`pip install boto3`</b>
+
+<h3>1.2 Boto 3: Resource vs Client</h3>
+
+<h3>1.2.a Resource</h3>
+
+<b>Resource</b> là một phần trừu tượng cấp cao hơn so với các máy khách. Chúng được tạo từ mô tả tài nguyên JSON có trong chính thư viện boto. Ví dụ: đây là định nghĩa tài nguyên cho S3 .
+
+Tài nguyên cung cấp giao diện hướng đối tượng để tương tác với các dịch vụ AWS khác nhau. Các tài nguyên có thể được khởi tạo như sau:
+```
+import boto3
+
+s3 = boto3.resource("s3")
+
+```
+
+<h3>1.2.b Client</h3>
+
+<b>Client</b>cung cấp giao diện cấp thấp cho dịch vụ AWS. Định nghĩa của chúng được tạo bởi mô tả dịch vụ JSON có trong thư viện botocore . Gói botocore được chia sẻ giữa boto3 cũng như AWS CLI .
+
+Định nghĩa dịch vụ cho AWS S3 được lưu trữ dưới dạng JSON trong gói botocore .
+
+Lợi ích chính của việc sử dụng ứng dụng Boto3 Client là:
+
+- Nó ánh xạ 1: 1 với API dịch vụ AWS thực tế.
+- Tất cả các hoạt động dịch vụ AWS được hỗ trợ bởi Client
+
+Ví dụ: nếu bạn muốn liệt kê tất cả các nhóm S3 trong tài khoản AWS của mình, bạn có thể sử dụng ứng dụng khách S3 như sau:
+
+```
+import boto3
+
+# Retrieve the list of existing buckets
+s3 = boto3.client("s3")
+response = s3.list_buckets()
+
+# Output the bucket names
+print("Existing buckets:")
+for bucket in response['Buckets']:
+    print(f'{bucket["Name"]}')
+
+```
+
+<h2>2. Bắt đầu phát triển với Python và DynamoDB </h2>
+
+<h3><b>2.1 Tạo bảng</b></h3>
+
+Tạo một bảng có tên Movies. Khóa chính cho bảng bao gồm các thuộc tính sau:
+
+<b>year</b> – The partition key. AttributeType là N(number).
+
+<b>title</b> – The sort key. AttributeType là S(string).
+
+- Bước 1: Tạo file có tên <b>`MoviesCreateTable.py`</b>
+
+- Bước 2: Sao chép đoạn mã sau và dán vào file <b>`MoviesCreateTable.py`</b>
+
+```
+import boto3
+
+
+def create_movie_table(dynamodb=None):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.create_table(
+        TableName='Movies',
+        KeySchema=[
+            {
+                'AttributeName': 'year',
+                'KeyType': 'HASH'  # Partition key
+            },
+            {
+                'AttributeName': 'title',
+                'KeyType': 'RANGE'  # Sort key
+            }
+        ],
+        AttributeDefinitions=[
+            {
+                'AttributeName': 'year',
+                'AttributeType': 'N'
+            },
+            {
+                'AttributeName': 'title',
+                'AttributeType': 'S'
+            },
+
+        ],
+        ProvisionedThroughput={
+            'ReadCapacityUnits': 10,
+            'WriteCapacityUnits': 10
+        }
+    )
+    return table
+
+
+if __name__ == '__main__':
+    movie_table = create_movie_table()
+    print("Table status:", movie_table.table_status)
+
+```
+
+- Bước 3: Chạy chương trình bằng Window Command Prompt đã được xác thực và cấu hình ở bước 1.1. Gõ lệnh:
+```
+python MoviesCreateTable.py
+```
+Trường hợp khác: sử dụng `python "đường dẫn file MoviesCreateTable.py"`
+
+- Bước 4: Sau khi chạy chương trình trả về <b>`Table status: CREATING`</b> là tạo bảng thành công.
+<h3>2.2 Ghi dữ liệu</h3>
+
+Thực hiện thêm item vào bảng Movies vừa tạo ở bước 2.1
+
+- Bước 1: Tạo file có tên <b>`MoviesItemOps01.py`</b> 
+
+- Bước 2: Sao chép chương trình sau và dán vào file <b>`MoviesItemOps01.py`</b>
+
+```
+from pprint import pprint
+import boto3
+
+
+def put_movie(title, year, plot, rating, dynamodb=None):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('Movies')
+    response = table.put_item(
+        Item={
+            'year': year,
+            'title': title,
+            'info': {
+                'plot': plot,
+                'rating': rating
+            }
+        }
+    )
+    return response
+
+
+if __name__ == '__main__':
+    movie_resp = put_movie("The Big New Movie", 2015,
+                           "Nothing happens at all.", 0)
+    print("Put movie succeeded:")
+    pprint(movie_resp, sort_dicts=False)
+
+```
+
+- Bước 3: Chạy chương trình bằng Window Command Prompt đã được xác thực và cấu hình ở bước 1.1. Gõ lệnh:
+
+```
+python MoviesItemOps01.py
+```
+Trường hợp khác: sử dụng `python "đường dẫn file MoviesItemOps01.py"`
+
+- Bước 4: Sau khi chạy chương trình, thu được kết quả:
+
+```
+Put movie succeeded:
+{'ResponseMetadata': {'RequestId': 'U9PQSVRR5PKKDD7NPV0NH91JD7VV4KQNSO5AEMVJF66Q9ASUAAJG',
+                      'HTTPStatusCode': 200,
+                      'HTTPHeaders': {'server': 'Server',
+                                      'date': 'Wed, 09 Feb 2022 03:11:45 GMT',
+                                      'content-type': 'application/x-amz-json-1.0',
+                                      'content-length': '2',
+                                      'connection': 'keep-alive',
+                                      'x-amzn-requestid': 'U9PQSVRR5PKKDD7NPV0NH91JD7VV4KQNSO5AEMVJF66Q9ASUAAJG',
+                                      'x-amz-crc32': '2745614147'},
+                      'RetryAttempts': 0}}
+
+```
+
+<h3>2.3 Đọc dữ liệu</h3>
+
+- Bước 1: Tạo file có tên <b>`MoviesItemOps02.py`</b>
+
+- Bước 2: Sao chép đoạn mã sau và dán vào file <b>`MoviesItemOps02.py`</b>
+
+```
+from pprint import pprint
+import boto3
+from botocore.exceptions import ClientError
+
+
+def get_movie(title, year, dynamodb=None):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('Movies')
+
+    try:
+        response = table.get_item(Key={'year': year, 'title': title})
+    except ClientError as e:
+        print(e.response['Error']['Message'])
+    else:
+        return response['Item']
+
+
+if __name__ == '__main__':
+    movie = get_movie("The Big New Movie", 2015,)
+    if movie:
+        print("Get movie succeeded:")
+        pprint(movie, sort_dicts=False)
+
+```
+- Bước 3: Chạy chương trình bằng Window Command Prompt đã được xác thực và cấu hình ở bước 1.1. Gõ lệnh:
+
+```
+python MoviesItemOps02.py
+```
+Trường hợp khác: sử dụng `python "đường dẫn file MoviesItemOps02.py"`
+
+- Bước 4: Sau khi chạy chương trình, thu được kết quả:
+
+```
+Get movie succeeded:
+{'year': Decimal('2015'),
+ 'info': {'rating': Decimal('0'), 'plot': 'Nothing happens at all.'},
+ 'title': 'The Big New Movie'}
+```
+
+<h3>2.4 Cập nhật dữ liệu</h3>
+
+- Bước 1: Tạo file có tên <b>`MoviesItemOps03.py`</b>
+
+- Bước 2: Sao chép đoạn mã sau và dán vào file <b>`MoviesItemOps03.py`</b>
+
+```
+from decimal import Decimal
+from pprint import pprint
+import boto3
+
+
+def update_movie(title, year, rating, plot, actors, dynamodb=None):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('Movies')
+
+    response = table.update_item(
+        Key={
+            'year': year,
+            'title': title
+        },
+        UpdateExpression="set info.rating=:r, info.plot=:p, info.actors=:a",
+        ExpressionAttributeValues={
+            ':r': Decimal(rating),
+            ':p': plot,
+            ':a': actors
+        },
+        ReturnValues="UPDATED_NEW"
+    )
+    return response
+
+
+if __name__ == '__main__':
+    update_response = update_movie(
+        "The Big New Movie", 2015, 5.5, "Everything happens all at once.",
+        ["Larry", "Moe", "Curly"])
+    print("Update movie succeeded:")
+    pprint(update_response, sort_dicts=False)
+
+```
+
+- Bước 3: Chạy chương trình bằng Window Command Prompt đã được xác thực và cấu hình ở bước 1.1. Gõ lệnh:
+
+```
+python MoviesItemOps03.py
+```
+Trường hợp khác: sử dụng `python "đường dẫn file MoviesItemOps03.py"`
+
+- Bước 4: Sau khi chạy chương trình, thu được kết quả:
+
+```
+Update movie succeeded:
+{'Attributes': {'info': {'actors': ['Larry', 'Moe', 'Curly'],
+                         'plot': 'Everything happens all at once.',
+                         'rating': Decimal('5.5')}},
+ 'ResponseMetadata': {'RequestId': 'RFMTVB72A6E2J39HBPIK8SHBN7VV4KQNSO5AEMVJF66Q9ASUAAJG',
+                      'HTTPStatusCode': 200,
+                      'HTTPHeaders': {'server': 'Server',
+                                      'date': 'Wed, 09 Feb 2022 03:29:15 GMT',
+                                      'content-type': 'application/x-amz-json-1.0',
+                                      'content-length': '156',
+                                      'connection': 'keep-alive',
+                                      'x-amzn-requestid': 'RFMTVB72A6E2J39HBPIK8SHBN7VV4KQNSO5AEMVJF66Q9ASUAAJG',
+                                      'x-amz-crc32': '3767510606'},
+                      'RetryAttempts': 0}}
+
+```
+
+
+<h3>2.5 Xóa dữ liệu</h3>
+
+- Bước 1: Tạo file có tên <b>`MoviesItemOps04.py`</b>
+
+- Bước 2: Sao chép đoạn mã sau và dán vào file <b>`MoviesItemOps04.py`</b>
+
+```
+from decimal import Decimal
+from pprint import pprint
+import boto3
+from botocore.exceptions import ClientError
+
+
+def delete_underrated_movie(title, year, rating, dynamodb=None):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('Movies')
+
+    try:
+        response = table.delete_item(
+            Key={
+                'year': year,
+                'title': title
+            }
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+            print(e.response['Error']['Message'])
+        else:
+            raise
+    else:
+        return response
+
+
+if __name__ == '__main__':
+    print("Attempting a conditional delete...")
+    delete_response = delete_underrated_movie("The Big New Movie", 2015, 5)
+    if delete_response:
+        print("Delete movie succeeded:")
+        pprint(delete_response, sort_dicts=False)
+
+```
+- Bước 3: Chạy chương trình bằng Window Command Prompt đã được xác thực và cấu hình ở bước 1.1. Gõ lệnh:
+
+```
+python MoviesItemOps03.py
+```
+Trường hợp khác: sử dụng `python "đường dẫn file MoviesItemOps03.py"`
+
+- Bước 4: Sau khi chạy chương trình, thu được kết quả: 
+
+```
+Attempting a conditional delete...
+Delete movie succeeded:
+{'ResponseMetadata': {'RequestId': 'HHA9MQ2U0UP1CL7CECBAAQRMMVVV4KQNSO5AEMVJF66Q9ASUAAJG',
+                      'HTTPStatusCode': 200,
+                      'HTTPHeaders': {'server': 'Server',
+                                      'date': 'Wed, 09 Feb 2022 03:39:32 GMT',
+                                      'content-type': 'application/x-amz-json-1.0',
+                                      'content-length': '2',
+                                      'connection': 'keep-alive',
+                                      'x-amzn-requestid': 'HHA9MQ2U0UP1CL7CECBAAQRMMVVV4KQNSO5AEMVJF66Q9ASUAAJG',
+                                      'x-amz-crc32': '2745614147'},
+                      'RetryAttempts': 0}}
+```
+
+
+<h3>2.6 Tải dữ liệu mẫu</h3>
+
+- Bước 1: Tải xuống dữ liệu mẫu <b>moviedata.zip</b>
+
+- Bước 2: Giải nén tệp dữ liệu ( moviedata.json) từ kho lưu trữ.
+
+- Bước 3: Sao chép tệp moviedata.json vào thư mục hiện tại của bạn.
+
+- Bước 4: Tạo file có tên <b>`MoviesLoadData.py`</b>
+
+- Bước 5: Sao chép đoạn mã sau và dán vào file <b>`MoviesLoadData.py`</b>
+
+```
+from decimal import Decimal
+import json
+import boto3
+
+
+def load_movies(movies, dynamodb=None):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('Movies')
+    for movie in movies:
+        year = int(movie['year'])
+        title = movie['title']
+        print("Adding movie:", year, title)
+        table.put_item(Item=movie)
+
+
+if __name__ == '__main__':
+    with open("moviedata.json") as json_file:
+        movie_list = json.load(json_file, parse_float=Decimal)
+    load_movies(movie_list)
+
+```
+- Bước 3: Chạy chương trình bằng Window Command Prompt đã được xác thực và cấu hình ở bước 1.1. Gõ lệnh:
+
+```
+python MoviesLoadData.py
+```
+Trường hợp khác: sử dụng `python "đường dẫn file MoviesLoadData.py"`
+
+- Bước 4: Sau khi chạy chương trình, thu được kết quả: 
+```
+Adding movie: 2013 Insidious: Chapter 2
+Adding movie: 2013 World War Z
+Adding movie: 2014 X-Men: Days of Future Past
+Adding movie: 2014 Transformers: Age of Extinction
+Adding movie: 2013 Now You See Me
+Adding movie: 2013 Gravity
+Adding movie: 2013 We're the Millers
+Adding movie: 2013 Riddick
+Adding movie: 2013 The Family
+Adding movie: 2013 Star Trek Into Darkness
+Adding movie: 2013 After Earth
+Adding movie: 2013 The Great Gatsby
+Adding movie: 2014 Divergent
+Adding movie: 2013 We Are What We Are
+Adding movie: 2013 Iron Man 3
+Adding movie: 2014 The Amazing Spider-Man 2
+Adding movie: 2013 Curse of Chucky
+Adding movie: 2013 The Conjuring
+Adding movie: 2013 Oldboy
+Adding movie: 2013 Escape Plan
+Adding movie: 2013 Elysium
+Adding movie: 2013 Cloudy with a 
+```
+Lưu ý: Đúng đường dẫn file <b>`moviedata.json`</b>
+
+
+<h3>2.7 Truy vấn dữ liệu</h3>
+
+Truy xuất tất cả các phim được phát hành vào năm 1985 từ dữ liệu mẫu được tải lên ở mục 2.6
+
+
+- Bước 1: Tạo file có tên <b>`MoviesQuery01.py`</b>
+
+- Bước 2: Sao chép đoạn mã sau và dán vào file <b>`MoviesQuery01.py`</b>
+```
+import boto3
+from boto3.dynamodb.conditions import Key
+
+
+def query_movies(year, dynamodb=None):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('Movies')
+    response = table.query(
+        KeyConditionExpression=Key('year').eq(year)
+    )
+    return response['Items']
+
+
+if __name__ == '__main__':
+    query_year = 1985
+    print(f"Movies from {query_year}")
+    movies = query_movies(query_year)
+    for movie in movies:
+        print(movie['year'], ":", movie['title'])
+
+```
+- Bước 3: Chạy chương trình bằng Window Command Prompt đã được xác thực và cấu hình ở bước 1.1. Gõ lệnh:
+
+```
+python MoviesQuery01.py
+```
+Trường hợp khác: sử dụng `python "đường dẫn file MoviesQuery01.py"`
+
+- Bước 4: Sau khi chạy chương trình, thu được kết quả: 
+
+```
+Movies from 1985
+1985 : A Nightmare on Elm Street Part 2: Freddy's Revenge
+1985 : A Room with a View
+1985 : A View to a Kill
+1985 : Back to the Future
+1985 : Better Off Dead...
+1985 : Brazil
+1985 : Clue
+1985 : Cocoon
+1985 : Commando
+1985 : Day of the Dead
+1985 : Flesh+Blood
+1985 : Friday the 13th: A New Beginning
+1985 : Fright Night
+1985 : Girls Just Want to Have Fun
+1985 : Just One of the Guys
+1985 : Legend
+1985 : Mad Max Beyond Thunderdome
+1985 : Mask
+1985 : Pale Rider
+1985 : Pee-wee's Big Adventure
+1985 : Police Academy 2: Their First Assignment
+1985 : Rambo: First Blood Part II
+1985 : Real Genius
+1985 : Return to Oz
+1985 : Rocky IV
+1985 : Silverado
+1985 : St. Elmo's Fire
+1985 : Teen Wolf
+1985 : The Breakfast Club
+1985 : The Color Purple
+1985 : The Goonies
+1985 : The Last Dragon
+1985 : The Return of the Living Dead
+1985 : Weird Science
+1985 : Witness
+
+```
+
+<h3>2.8 Quét dữ liệu</h3>
+
+Phương thức <b>scan</b> đọc mọi mục trong toàn bộ bảng và trả về tất cả dữ liệu trong bảng. Bạn có thể cung cấp một tùy chọn <b>`filter_expression`</b> để chỉ những mặt hàng phù hợp với tiêu chí của bạn mới được trả lại. Tuy nhiên, bộ lọc chỉ được áp dụng sau khi toàn bộ bảng đã được quét.
+
+Chương trình sau quét toàn bộ bảng Movies, trong đó có khoảng 5.000 mục. Quá trình quét chỉ định bộ lọc tùy chọn để chỉ lấy các phim từ những năm 1950 (khoảng 100 mục) và loại bỏ tất cả các phim khác.
+
+- Bước 1: Tạo file có tên <b>`MoviesScan.py`</b>
+
+- Bước 2: Sao chép đoạn mã sau và dán vào file <b>`MoviesScan.py`</b>
+
+```
+from pprint import pprint
+import boto3
+from boto3.dynamodb.conditions import Key
+
+
+def scan_movies(year_range, display_movies, dynamodb=None):
+    dynamodb = boto3.resource('dynamodb')
+
+    table = dynamodb.Table('Movies')
+    scan_kwargs = {
+        'FilterExpression': Key('year').between(*year_range),
+        'ProjectionExpression': "#yr, title, info.rating",
+        'ExpressionAttributeNames': {"#yr": "year"}
+    }
+
+    done = False
+    start_key = None
+    while not done:
+        if start_key:
+            scan_kwargs['ExclusiveStartKey'] = start_key
+        response = table.scan(**scan_kwargs)
+        display_movies(response.get('Items', []))
+        start_key = response.get('LastEvaluatedKey', None)
+        done = start_key is None
+
+
+if __name__ == '__main__':
+    def print_movies(movies):
+        for movie in movies:
+            print(f"\n{movie['year']} : {movie['title']}")
+            pprint(movie['info'])
+
+    query_range = (1950, 1959)
+    print(
+        f"Scanning for movies released from {query_range[0]} to {query_range[1]}...")
+    scan_movies(query_range, print_movies)
+```
+Chú thích:
+
+     ProjectionExpression chỉ định các thuộc tính bạn muốn trong kết quả quét.
+
+     FilterExpression chỉ định một điều kiện chỉ trả về các mục thỏa mãn điều kiện. Tất cả các mục khác đều bị loại bỏ.
+
+- Bước 3 Chạy chương trình bằng Window Command Prompt đã được xác thực và cấu hình ở bước 1.1. Gõ lệnh:
+
+```
+python MoviesScan.py
+```
+Trường hợp khác: sử dụng `python "đường dẫn file MoviesScan.py"`
+
+- Bước 4: Sau khi chạy chương trình, thu được kết quả
+
+```
+
+1958 : Cat on a Hot Tin Roof
+{'rating': Decimal('8')}
+
+1958 : Monster on the Campus
+{'rating': Decimal('5.7')}
+
+1958 : No Time for Sergeants
+{'rating': Decimal('7.5')}
+
+1958 : Teacher's Pet
+{'rating': Decimal('7')}
+
+1958 : Touch of Evil
+{'rating': Decimal('8.2')}
+
+1958 : Vertigo
+{'rating': Decimal('8.5')}
+
+1951 : A Streetcar Named Desire
+{'rating': Decimal('8')}
+
+1951 : Alice in Wonderland
+{'rating': Decimal('7.4')}
+
+1951 : An American in Paris
+{'rating': Decimal('7.2')}
+
+1951 : Operation Pacific
+{'rating': Decimal('6.5')}
+
+1951 : Storm Warning
+{'rating': Decimal('7')}
+
+1951 : Strangers on a Train
+{'rating': Decimal('8.2')}
+
+1951 : The African Queen
+{'rating': Decimal('8')}
+
+```
+
+<h3>2.9 Xóa dữ liệu bảng</h3>
+
+- Bước 1: Tạo file có tên <b>`MoviesDeleteTable.py`</b>
+
+- Bước 2: Sao chép đoạn mã sau và dán vào file <b>`MoviesDeleteTable.py`</b>
+```
+import boto3
+
+
+def delete_movie_table(dynamodb=None):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('Movies')
+    table.delete()
+
+
+if __name__ == '__main__':
+    delete_movie_table()
+    print("Movies table deleted.")
+```
+- Bước 3 Chạy chương trình bằng Window Command Prompt đã được xác thực và cấu hình ở bước 1.1. Gõ lệnh:
+
+```
+python MoviesDeleteTable.py
+```
+Trường hợp khác: sử dụng `python "đường dẫn file MoviesDeleteTable.py"`
+
+- Bước 4: Sau khi chạy chương trình, thu được kết quả
+
+```
+Movies table deleted.
+```
+
+<h1>IV.DỌN DẸP TÀI NGUYÊN</h1>
 
 <h3>1.1 Sử dụng AWS Management Console</h2>
 
